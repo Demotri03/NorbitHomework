@@ -1,12 +1,20 @@
-const express = require("express");
+import express from "express";
 const app = express();
-const http = require("http");
+import http from "http";
 const server = http.createServer(app);
-const { Server } = require("socket.io");
-const WebSocket = require("ws");
-const io = new Server(server);
-const { Client } = require("pg");
-const client = new Client({
+import { Server } from "socket.io";
+import WebSocket from "ws";
+const settings = {
+  cors: true,
+  origins: ["http://127.0.0.1:3001"],
+};
+const io = new Server(server, settings);
+import pg from "pg";
+const { Client } = pg;
+import { saveBoatData } from "./queries.js";
+let boatInfo;
+
+export const client = new Client({
   user: "demo",
   host: "localhost",
   database: "norbit",
@@ -24,14 +32,26 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
   console.log("a user connected");
+  if (boatInfo) {
+    setInterval(function () {
+      socket.emit("sending boat data", boatInfo);
+    }, 1000);
+  }
 });
 
-server.listen(3000, () => {
-  console.log("listening on *:3000");
+server.listen(3001, () => {
+  console.log("listening on *:3001");
 });
 
 const socket = new WebSocket("ws://127.0.0.1:7071");
 socket.onmessage = ({ data }) => {
-  let coords = JSON.parse(data);
-  console.log(data);
+  let boat = JSON.parse(data);
+  boatInfo = boat;
+  console.log(boat);
+  for (const b in boat) {
+    if (boat.hasOwnProperty.call(boat, b)) {
+      const element = boat[b];
+      saveBoatData(element);
+    }
+  }
 };

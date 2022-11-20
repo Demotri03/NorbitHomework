@@ -3,9 +3,9 @@ const { parse } = require("csv-parse");
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({ port: 7071 });
 const clients = new Map();
-const boat1 = { latitude: [], longitude: [], heading: [] };
-const boat2 = { latitude: [], longitude: [], heading: [] };
-const boat3 = { latitude: [], longitude: [], heading: [] };
+const boat1 = { latitude: [], longitude: [], heading: [], name: "boat 1" };
+const boat2 = { latitude: [], longitude: [], heading: [], name: "boat 2" };
+const boat3 = { latitude: [], longitude: [], heading: [], name: "boat 3" };
 
 //getting CSV files:
 
@@ -56,12 +56,12 @@ function readCSV() {
 }
 
 function compileBoatData(line) {
-  let boat = { latitude: 0, longitude: 0, heading: 0 };
+  let boat = { latitude: 0, longitude: 0, heading: 0, name: "" };
   if (!line.includes(undefined)) {
     boat.latitude = line[0];
     boat.longitude = line[1];
     boat.heading = line[2];
-
+    boat.name = line[3];
     return boat;
   }
 }
@@ -77,17 +77,20 @@ wss.on("connection", (ws) => {
       boat1.latitude.shift(),
       boat1.longitude.shift(),
       boat1.heading.shift(),
+      boat1.name,
     ]);
     let msg2 = compileBoatData([
       boat2.latitude.shift(),
       boat2.longitude.shift(),
       boat2.heading.shift(),
+      boat2.name,
     ]);
 
     let msg3 = compileBoatData([
       boat3.latitude.shift(),
       boat3.longitude.shift(),
       boat3.heading.shift(),
+      boat3.name,
     ]);
 
     let message = JSON.stringify({ boat1: msg1, boat2: msg2, boat3: msg3 });
