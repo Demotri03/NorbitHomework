@@ -9,7 +9,7 @@ const socket = new WebSocket("ws://127.0.0.1:7071");
 
 export const App = () => {
   //Should have just used an object such as {[boat:n, coords:[lat,lon], heading:n]}
-
+  let [isReconding, setIsRecording] = useState(false);
   let [boat1, setBoat1] = useState([]);
   let [boat2, setBoat2] = useState([]);
   let [boat3, setBoat3] = useState([]);
@@ -24,18 +24,40 @@ export const App = () => {
       socket.emit("connection");
 
       socket.on("sending boat data", (data) => {
-        console.log(data);
-        setBoat1([data.boat1.longitude, data.boat1.latitude]);
-        setBoat1Heading([data.boat1.heading]);
-        setBoat2([data.boat2.longitude, data.boat2.latitude]);
-        setBoat2Heading([data.boat2.heading]);
-        setBoat3([data.boat3.longitude, data.boat3.latitude]);
-        setBoat3Heading([data.boat3.heading]);
+        if (data.boat1) {
+          setBoat1([data.boat1.longitude, data.boat1.latitude]);
+          setBoat1Heading([data.boat1.heading]);
+        }
+        if (data.boat2) {
+          setBoat2([data.boat2.longitude, data.boat2.latitude]);
+          setBoat2Heading([data.boat2.heading]);
+        }
+        if (data.boat3) {
+          setBoat3([data.boat3.longitude, data.boat3.latitude]);
+          setBoat3Heading([data.boat3.heading]);
+        }
       });
     } catch (err) {
       console.log(err);
     }
   }, []);
+
+  const record = () => {
+    try {
+      if (!isReconding) {
+        socket.emit("start recording");
+      } else {
+        socket.emit("stop recording");
+        socket.on("sending recording", (recording) => {
+          console.log("this is what I recorded: ", recording);
+        });
+      }
+      setIsRecording(!isReconding);
+      console.log("recording: ", isReconding);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
     <div>
@@ -108,7 +130,7 @@ export const App = () => {
           </RFeature>
         </RLayerVector>
       </RMap>
-      <button>record</button>
+      <button onClick={record}>{isReconding ? "Stop" : "Record"}</button>
     </div>
   );
 };

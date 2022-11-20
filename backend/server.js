@@ -13,6 +13,9 @@ import pg from "pg";
 const { Client } = pg;
 import { saveBoatData } from "./queries.js";
 let boatInfo;
+let currentRecording = [];
+let allRecordings = {};
+let isRecording = false;
 
 export const client = new Client({
   user: "demo",
@@ -31,11 +34,18 @@ app.get("/", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("a user connected");
   if (boatInfo) {
     setInterval(function () {
       socket.emit("sending boat data", boatInfo);
     }, 1000);
+    socket.on("start recording", () => {
+      isRecording = true;
+    });
+    socket.on("stop recording", () => {
+      let timestamp = new Date();
+      allRecordings[timestamp] = currentRecording;
+      socket.emit("sending recording", allRecordings[timestamp]);
+    });
   }
 });
 
@@ -47,11 +57,13 @@ const socket = new WebSocket("ws://127.0.0.1:7071");
 socket.onmessage = ({ data }) => {
   let boat = JSON.parse(data);
   boatInfo = boat;
-  console.log(boat);
   for (const b in boat) {
     if (boat.hasOwnProperty.call(boat, b)) {
       const element = boat[b];
       saveBoatData(element);
     }
+  }
+  if (isRecording) {
+    currentRecording.push(boat);
   }
 };
