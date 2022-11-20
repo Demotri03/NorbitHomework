@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { fromLonLat } from "ol/proj";
 import { LineString, Point } from "ol/geom";
 import "ol/ol.css";
 import { useState } from "react";
-
+import { io } from "socket.io-client";
 import { RMap, ROSM, RLayerVector, RFeature, ROverlay, RStyle } from "rlayers";
 const socket = new WebSocket("ws://127.0.0.1:7071");
 
 export const App = () => {
   //Should have just used an object such as {[boat:n, coords:[lat,lon], heading:n]}
+
   let [boat1, setBoat1] = useState([]);
   let [boat2, setBoat2] = useState([]);
   let [boat3, setBoat3] = useState([]);
@@ -16,15 +17,26 @@ export const App = () => {
   let [boat2Heading, setBoat2Heading] = useState(0);
   let [boat3Heading, setBoat3Heading] = useState(0);
 
-  socket.onmessage = ({ data }) => {
-    let coords = JSON.parse(data);
-    setBoat1([coords.boat1.longitude, coords.boat1.latitude]);
-    setBoat1Heading([coords.boat1.heading]);
-    setBoat2([coords.boat2.longitude, coords.boat2.latitude]);
-    setBoat2Heading([coords.boat2.heading]);
-    setBoat3([coords.boat3.longitude, coords.boat3.latitude]);
-    setBoat3Heading([coords.boat3.heading]);
-  };
+  const socket = io("127.0.0.1:3001");
+
+  useEffect(() => {
+    try {
+      socket.emit("connection");
+
+      socket.on("sending boat data", (data) => {
+        console.log(data);
+        setBoat1([data.boat1.longitude, data.boat1.latitude]);
+        setBoat1Heading([data.boat1.heading]);
+        setBoat2([data.boat2.longitude, data.boat2.latitude]);
+        setBoat2Heading([data.boat2.heading]);
+        setBoat3([data.boat3.longitude, data.boat3.latitude]);
+        setBoat3Heading([data.boat3.heading]);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
   return (
     <div>
       <RMap

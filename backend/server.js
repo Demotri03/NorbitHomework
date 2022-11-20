@@ -4,10 +4,16 @@ import http from "http";
 const server = http.createServer(app);
 import { Server } from "socket.io";
 import WebSocket from "ws";
-const io = new Server(server);
+const settings = {
+  cors: true,
+  origins: ["http://127.0.0.1:3001"],
+};
+const io = new Server(server, settings);
 import pg from "pg";
 const { Client } = pg;
 import { saveBoatData } from "./queries.js";
+let boatInfo;
+
 export const client = new Client({
   user: "demo",
   host: "localhost",
@@ -26,15 +32,21 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
   console.log("a user connected");
+  if (boatInfo) {
+    setInterval(function () {
+      socket.emit("sending boat data", boatInfo);
+    }, 1000);
+  }
 });
 
-server.listen(3000, () => {
-  console.log("listening on *:3000");
+server.listen(3001, () => {
+  console.log("listening on *:3001");
 });
 
 const socket = new WebSocket("ws://127.0.0.1:7071");
 socket.onmessage = ({ data }) => {
   let boat = JSON.parse(data);
+  boatInfo = boat;
   console.log(boat);
   for (const b in boat) {
     if (boat.hasOwnProperty.call(boat, b)) {
