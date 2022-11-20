@@ -1,12 +1,14 @@
-const express = require("express");
+import express from "express";
 const app = express();
-const http = require("http");
+import http from "http";
 const server = http.createServer(app);
-const { Server } = require("socket.io");
-const WebSocket = require("ws");
+import { Server } from "socket.io";
+import WebSocket from "ws";
 const io = new Server(server);
-const { Client } = require("pg");
-const client = new Client({
+import pg from "pg";
+const { Client } = pg;
+import { saveBoatData } from "./queries.js";
+export const client = new Client({
   user: "demo",
   host: "localhost",
   database: "norbit",
@@ -32,6 +34,12 @@ server.listen(3000, () => {
 
 const socket = new WebSocket("ws://127.0.0.1:7071");
 socket.onmessage = ({ data }) => {
-  let coords = JSON.parse(data);
-  console.log(data);
+  let boat = JSON.parse(data);
+  console.log(boat);
+  for (const b in boat) {
+    if (boat.hasOwnProperty.call(boat, b)) {
+      const element = boat[b];
+      saveBoatData(element);
+    }
+  }
 };
