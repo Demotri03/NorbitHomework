@@ -8,7 +8,6 @@ const boat2 = { latitude: [], longitude: [], heading: [], name: "boat 2" };
 const boat3 = { latitude: [], longitude: [], heading: [], name: "boat 3" };
 
 //getting CSV files:
-
 function readCSV() {
   //boat 1
   fs.createReadStream("./lines/line1.csv")

@@ -5,7 +5,6 @@ import "ol/ol.css";
 import { useState } from "react";
 import { io } from "socket.io-client";
 import { RMap, ROSM, RLayerVector, RFeature, ROverlay, RStyle } from "rlayers";
-const socket = new WebSocket("ws://127.0.0.1:7071");
 
 export const App = () => {
   //Should have just used an object such as {[boat:n, coords:[lat,lon], heading:n]}
@@ -16,7 +15,8 @@ export const App = () => {
   let [boat1Heading, setBoat1Heading] = useState(0);
   let [boat2Heading, setBoat2Heading] = useState(0);
   let [boat3Heading, setBoat3Heading] = useState(0);
-
+  let [boatRecordings, setBoatRecordings] = useState([]);
+  let [isReplaying, setIsReplaying] = useState(false);
   const socket = io("127.0.0.1:3001");
 
   useEffect(() => {
@@ -24,6 +24,8 @@ export const App = () => {
       socket.emit("connection");
 
       socket.on("sending boat data", (data) => {
+        console.log("boat data: ", data);
+        setIsReplaying(data.isReplaying);
         if (data.boat1) {
           setBoat1([data.boat1.longitude, data.boat1.latitude]);
           setBoat1Heading([data.boat1.heading]);
@@ -48,15 +50,20 @@ export const App = () => {
         socket.emit("start recording");
       } else {
         socket.emit("stop recording");
-        socket.on("sending recording", (recording) => {
-          console.log("this is what I recorded: ", recording);
+        socket.on("sending recording", (recordings) => {
+          console.log("this is what I recorded: ", recordings);
+          setBoatRecordings(recordings);
         });
       }
       setIsRecording(!isReconding);
-      console.log("recording: ", isReconding);
     } catch (err) {
       console.log(err);
     }
+  };
+
+  const playRecording = (timestamp) => {
+    console.log("sending timestamp: ", timestamp);
+    socket.emit("requesting recording", timestamp);
   };
 
   return (
@@ -77,7 +84,11 @@ export const App = () => {
           <RFeature geometry={new Point(fromLonLat(boat1))}>
             <ROverlay className="no-interaction">
               <img
-                src={"https://i.imgur.com/uenYWkR.png"}
+                src={
+                  isReplaying
+                    ? "https://i.imgur.com/7OmbXRY.png "
+                    : "https://i.imgur.com/uenYWkR.png"
+                }
                 style={{
                   position: "relative",
                   transform: `rotate(${boat1Heading}deg)`,
@@ -95,7 +106,11 @@ export const App = () => {
           <RFeature geometry={new Point(fromLonLat(boat2))}>
             <ROverlay className="no-interaction">
               <img
-                src={"https://i.imgur.com/uenYWkR.png"}
+                src={
+                  isReplaying
+                    ? "https://i.imgur.com/7OmbXRY.png "
+                    : "https://i.imgur.com/uenYWkR.png"
+                }
                 style={{
                   position: "relative",
                   transform: `rotate(${boat2Heading}deg)`,
@@ -113,7 +128,11 @@ export const App = () => {
           <RFeature geometry={new Point(fromLonLat(boat3))}>
             <ROverlay className="no-interaction">
               <img
-                src={"https://i.imgur.com/uenYWkR.png"}
+                src={
+                  isReplaying
+                    ? "https://i.imgur.com/7OmbXRY.png "
+                    : "https://i.imgur.com/uenYWkR.png"
+                }
                 style={{
                   position: "relative",
                   transform: `rotate(${boat3Heading}deg)`,
@@ -128,9 +147,27 @@ export const App = () => {
               />
             </ROverlay>
           </RFeature>
+          {isReplaying && (
+            <RFeature geometry={new LineString(fromLonLat(boat3))}>
+              <ROverlay></ROverlay>
+            </RFeature>
+          )}
         </RLayerVector>
       </RMap>
       <button onClick={record}>{isReconding ? "Stop" : "Record"}</button>
+      <div>{isReplaying ? "REPLAY IN PROGRESS" : "LIVE DATA"}</div>
+      <div
+        style={{ display: "block", background: "grey", width: "fit-content" }}
+      >
+        <ul>
+          {boatRecordings.map((recording) => (
+            <button onClick={() => playRecording(recording)}>
+              {recording}
+              <br />
+            </button>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

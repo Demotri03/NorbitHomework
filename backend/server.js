@@ -16,6 +16,7 @@ let boatInfo;
 let currentRecording = [];
 let allRecordings = {};
 let isRecording = false;
+let isReplaying = false;
 
 export const client = new Client({
   user: "demo",
@@ -36,16 +37,51 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
   if (boatInfo) {
     setInterval(function () {
-      socket.emit("sending boat data", boatInfo);
+      if (!isReplaying) {
+        socket.emit("sending boat data", boatInfo);
+      } else {
+        console.log("CURRENT REC b4 slice: ", currentRecording.length);
+
+        let slice = currentRecording.shift();
+        console.log("CURRENT REC after slice: ", currentRecording.length);
+        console.log("slice: ", slice);
+        if (slice) {
+          socket.emit("sending boat data", slice);
+        } else {
+          isReplaying = false;
+        }
+      }
     }, 1000);
+
     socket.on("start recording", () => {
       isRecording = true;
     });
     socket.on("stop recording", () => {
       let timestamp = new Date();
       allRecordings[timestamp] = currentRecording;
-      socket.emit("sending recording", allRecordings[timestamp]);
+      currentRecording = [];
+      isRecording = false;
+      socket.emit("sending recording", Object.keys(allRecordings));
     });
+    socket.on("requesting recording", (recordName) => {
+      currentRecording = JSON.parse(JSON.stringify(allRecordings[recordName]));
+
+      isReplaying = true;
+    });
+    // socket.on("requesting recording", (data) => {
+    //   if (allRecordings[data]) {
+    //     console.log("found it! sending...", allRecordings[data]);
+    //     socket.emit(
+    //       "sending requested recording",
+    //       allRecordings[data],
+    //       (response) => {
+    //         console.log("response: ", response);
+    //       }
+    //     );
+    //   } else {
+    //     socket.emit("invalid timestamp, record not found!");
+    //   }
+    // });
   }
 });
 
