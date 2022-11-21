@@ -24,7 +24,6 @@ export const App = () => {
       socket.emit("connection");
 
       socket.on("sending boat data", (data) => {
-        console.log("boat data: ", data);
         setIsReplaying(data.isReplaying);
         if (data.boat1) {
           setBoat1([data.boat1.longitude, data.boat1.latitude]);
@@ -51,7 +50,6 @@ export const App = () => {
       } else {
         socket.emit("stop recording");
         socket.on("sending recording", (recordings) => {
-          console.log("this is what I recorded: ", recordings);
           setBoatRecordings(recordings);
         });
       }
@@ -62,7 +60,6 @@ export const App = () => {
   };
 
   const playRecording = (timestamp) => {
-    console.log("sending timestamp: ", timestamp);
     socket.emit("requesting recording", timestamp);
   };
 

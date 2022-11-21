@@ -51,7 +51,9 @@ function readCSV() {
     .on("error", function (error) {
       console.log(error.message);
     })
-    .on("end", function () {});
+    .on("end", function () {
+      console.log("reading boat 3 finished");
+    });
 }
 
 function compileBoatData(line) {

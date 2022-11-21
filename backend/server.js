@@ -38,14 +38,13 @@ io.on("connection", (socket) => {
   if (boatInfo) {
     setInterval(function () {
       if (!isReplaying) {
+        boatInfo.isReplaying = isReplaying;
         socket.emit("sending boat data", boatInfo);
       } else {
-        console.log("CURRENT REC b4 slice: ", currentRecording.length);
-
         let slice = currentRecording.shift();
-        console.log("CURRENT REC after slice: ", currentRecording.length);
-        console.log("slice: ", slice);
+
         if (slice) {
+          slice.isReplaying = isReplaying;
           socket.emit("sending boat data", slice);
         } else {
           isReplaying = false;
@@ -65,23 +64,8 @@ io.on("connection", (socket) => {
     });
     socket.on("requesting recording", (recordName) => {
       currentRecording = JSON.parse(JSON.stringify(allRecordings[recordName]));
-
       isReplaying = true;
     });
-    // socket.on("requesting recording", (data) => {
-    //   if (allRecordings[data]) {
-    //     console.log("found it! sending...", allRecordings[data]);
-    //     socket.emit(
-    //       "sending requested recording",
-    //       allRecordings[data],
-    //       (response) => {
-    //         console.log("response: ", response);
-    //       }
-    //     );
-    //   } else {
-    //     socket.emit("invalid timestamp, record not found!");
-    //   }
-    // });
   }
 });
 
